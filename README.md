@@ -1,0 +1,70 @@
+# arping
+arping is a native go library for sending arp requests under Linux and BSD.
+
+It is usable to ping a host per arp datagram, or query a host mac address (see Examples).
+  
+
+## Usage
+### arping library
+
+* import this library per `import "github.com/j-keck/arping"`
+* download the library `go get`
+* run it `sudo go run <YOUR PROGRAMM>` 
+* or build it `go build`
+
+
+  The library requires raw socket access. So it must run as root, or with appropriate capabilities under linux: `sudo setcap cap_net_raw+ep <BIN>`.
+
+
+#### Examples
+
+##### ping a host:
+     package main
+     import ("fmt"; "github.com/j-keck/arping"; "net")
+
+     func main(){
+       dstIp := net.ParseIP("192.168.1.1")
+       if hwAddr, duration, err := arping.Arping(dstIp); err != nil {
+         fmt.Println(err)
+       } else {
+         fmt.Printf("%s (%s) %d usec\n", dstIp, hwAddr, duration/1000)
+       }
+     }
+
+##### resolve mac address:
+     package main
+     import ("fmt"; "github.com/j-keck/arping"; "net")
+
+     func main(){  
+       dstIp := net.ParseIP("192.168.1.1")
+       if hwAddr, _, err := arping.Arping(dstIp); err != nil {
+         fmt.Println(err)
+       } else {
+         fmt.Printf("%s is at %s\n", dstIp, hwAddr)
+       }
+     }
+
+##### check if host is online:
+     package main
+     import ("fmt"; "github.com/j-keck/arping"; "net")
+
+     func main(){
+       dstIp := net.ParseIP("192.168.1.1")
+       _, _, err := arping.Arping(dstIp)
+       if err == arping.Timeout {
+         fmt.Println("offline")
+       }else if err != nil {
+         fmt.Println(err.Error())
+       }else{
+         fmt.Println("online")
+       }
+     }
+  
+
+  
+### arping executable
+   
+To get a runnable pinger use `go get -u github.com/j-keck/arping/cmd/arping`. This will build the binary in $GOPATH/bin.
+
+arping requires raw socket access. So it must run as root, or with appropriate capabilities under Linux: `sudo setcap cap_net_raw+ep <ARPING_PATH>`.
+
