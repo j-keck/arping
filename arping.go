@@ -1,5 +1,7 @@
-// arping is a native go library for sending arp requests
-// ============================================
+// arping is a native go library to ping a host per arp datagram, or query a host mac address
+//
+// The currently supported platforms are: Linux and BSD.
+//
 //
 // Examples:
 //
