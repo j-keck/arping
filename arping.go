@@ -3,6 +3,10 @@
 // The currently supported platforms are: Linux and BSD.
 //
 //
+// The library requires raw socket access. So it must run as root, or with appropriate capabilities under linux:
+// `sudo setcap cap_net_raw+ep <BIN>`.
+//
+//
 // Examples:
 //
 //   ping a host:
