@@ -9,8 +9,9 @@ The currently supported platforms are: Linux and BSD.
 ### arping library
 
 * import this library per `import "github.com/j-keck/arping"`
+* export GOPATH if not already (`export GOPATH=$PWD`)
 * download the library `go get`
-* run it `sudo go run <YOUR PROGRAMM>` 
+* run it `sudo -E go run <YOUR PROGRAMM>` 
 * or build it `go build`
 
 
