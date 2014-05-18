@@ -25,11 +25,11 @@ The library requires raw socket access. So it must run as root, or with appropri
      import ("fmt"; "github.com/j-keck/arping"; "net")
 
      func main(){
-       dstIp := net.ParseIP("192.168.1.1")
-       if hwAddr, duration, err := arping.Arping(dstIp); err != nil {
+       dstIP := net.ParseIP("192.168.1.1")
+       if hwAddr, duration, err := arping.Arping(dstIP); err != nil {
          fmt.Println(err)
        } else {
-         fmt.Printf("%s (%s) %d usec\n", dstIp, hwAddr, duration/1000)
+         fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
        }
      }
 
@@ -38,11 +38,11 @@ The library requires raw socket access. So it must run as root, or with appropri
      import ("fmt"; "github.com/j-keck/arping"; "net")
 
      func main(){  
-       dstIp := net.ParseIP("192.168.1.1")
-       if hwAddr, _, err := arping.Arping(dstIp); err != nil {
+       dstIP := net.ParseIP("192.168.1.1")
+       if hwAddr, _, err := arping.Arping(dstIP); err != nil {
          fmt.Println(err)
        } else {
-         fmt.Printf("%s is at %s\n", dstIp, hwAddr)
+         fmt.Printf("%s is at %s\n", dstIP, hwAddr)
        }
      }
 
@@ -51,9 +51,9 @@ The library requires raw socket access. So it must run as root, or with appropri
      import ("fmt"; "github.com/j-keck/arping"; "net")
 
      func main(){
-       dstIp := net.ParseIP("192.168.1.1")
-       _, _, err := arping.Arping(dstIp)
-       if err == arping.Timeout {
+       dstIP := net.ParseIP("192.168.1.1")
+       _, _, err := arping.Arping(dstIP)
+       if err == arping.ErrTimeout {
          fmt.Println("offline")
        }else if err != nil {
          fmt.Println(err.Error())

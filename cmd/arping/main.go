@@ -51,15 +51,15 @@ func main() {
 		fmt.Println("Parameter <IP> missing!")
 		printHelpAndExit()
 	}
-	dstIp := net.ParseIP(flag.Arg(0))
+	dstIP := net.ParseIP(flag.Arg(0))
 
 	var hwAddr net.HardwareAddr
 	var durationNanos time.Duration
 	var err error
 	if len(*ifaceNameFlag) > 0 {
-		hwAddr, durationNanos, err = arping.ArpingOverIfaceByName(dstIp, *ifaceNameFlag)
+		hwAddr, durationNanos, err = arping.ArpingOverIfaceByName(dstIP, *ifaceNameFlag)
 	} else {
-		hwAddr, durationNanos, err = arping.Arping(dstIp)
+		hwAddr, durationNanos, err = arping.Arping(dstIP)
 	}
 
 	// ping timeout
@@ -84,7 +84,7 @@ func main() {
 		durationString = fmt.Sprintf("%d", durationMicros)
 	}
 
-	fmt.Printf("%s (%s) %s usec\n", dstIp, hwAddr, durationString)
+	fmt.Printf("%s (%s) %s usec\n", dstIP, hwAddr, durationString)
 	os.Exit(0)
 }
 

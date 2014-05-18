@@ -25,9 +25,9 @@ type arpDatagram struct {
 
 func newArpRequest(
 	srcMac net.HardwareAddr,
-	srcIp net.IP,
+	srcIP net.IP,
 	dstMac net.HardwareAddr,
-	dstIp net.IP) arpDatagram {
+	dstIP net.IP) arpDatagram {
 	return arpDatagram{
 		htype: uint16(1),
 		ptype: uint16(0x0800),
@@ -35,9 +35,9 @@ func newArpRequest(
 		plen:  uint8(4),
 		oper:  uint16(requestOper),
 		sha:   srcMac,
-		spa:   srcIp.To4(),
+		spa:   srcIP.To4(),
 		tha:   dstMac,
-		tpa:   dstIp.To4()}
+		tpa:   dstIP.To4()}
 }
 
 func (datagram arpDatagram) Marshal() []byte {
@@ -65,7 +65,7 @@ func (datagram arpDatagram) MarshalWithEthernetHeader() []byte {
 	return append(ethernetHeader, datagram.Marshal()...)
 }
 
-func (datagram arpDatagram) SenderIp() net.IP {
+func (datagram arpDatagram) SenderIP() net.IP {
 	return net.IP(datagram.spa)
 }
 func (datagram arpDatagram) SenderMac() net.HardwareAddr {

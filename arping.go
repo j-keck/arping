@@ -1,4 +1,4 @@
-// arping is a native go library to ping a host per arp datagram, or query a host mac address
+// Package arping is a native go library to ping a host per arp datagram, or query a host mac address
 //
 // The currently supported platforms are: Linux and BSD.
 //
@@ -15,11 +15,11 @@
 //     import ("fmt"; "github.com/j-keck/arping"; "net")
 //
 //     func main(){
-//       dstIp := net.ParseIP("192.168.1.1")
-//       if hwAddr, duration, err := arping.Arping(dstIp); err != nil {
+//       dstIP := net.ParseIP("192.168.1.1")
+//       if hwAddr, duration, err := arping.Arping(dstIP); err != nil {
 //         fmt.Println(err)
 //       } else {
-//         fmt.Printf("%s (%s) %d usec\n", dstIp, hwAddr, duration/1000)
+//         fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
 //       }
 //     }
 //
@@ -30,11 +30,11 @@
 //     import ("fmt"; "github.com/j-keck/arping"; "net")
 //
 //     func main(){
-//       dstIp := net.ParseIP("192.168.1.1")
-//       if hwAddr, _, err := arping.Arping(dstIp); err != nil {
+//       dstIP := net.ParseIP("192.168.1.1")
+//       if hwAddr, _, err := arping.Arping(dstIP); err != nil {
 //         fmt.Println(err)
 //       } else {
-//         fmt.Printf("%s is at %s\n", dstIp, hwAddr)
+//         fmt.Printf("%s is at %s\n", dstIP, hwAddr)
 //       }
 //     }
 //
@@ -45,9 +45,9 @@
 //     import ("fmt"; "github.com/j-keck/arping"; "net")
 //
 //     func main(){
-//       dstIp := net.ParseIP("192.168.1.1")
-//       _, _, err := arping.Arping(dstIp)
-//       if err == arping.Timeout {
+//       dstIP := net.ParseIP("192.168.1.1")
+//       _, _, err := arping.Arping(dstIP)
+//       if err == arping.ErrTimeout {
 //         fmt.Println("offline")
 //       }else if err != nil {
 //         fmt.Println(err.Error())
@@ -68,40 +68,41 @@ import (
 )
 
 var (
-	Timeout = errors.New("timeout")
+	// ErrTimeout error
+	ErrTimeout = errors.New("timeout")
 
 	verboseLog = log.New(ioutil.Discard, "", 0)
 	timeout    = time.Duration(500 * time.Millisecond)
 )
 
-// sends an arp ping to 'dstIp'
-func Arping(dstIp net.IP) (net.HardwareAddr, time.Duration, error) {
-	if iface, err := findUsableInterfaceForNetwork(dstIp); err != nil {
+// Arping sends an arp ping to 'dstIP'
+func Arping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
+	iface, err := findUsableInterfaceForNetwork(dstIP)
+	if err != nil {
 		return nil, 0, err
-	} else {
-		return ArpingOverIface(dstIp, *iface)
 	}
+	return ArpingOverIface(dstIP, *iface)
 }
 
-// sends an arp ping over interface name 'ifaceName' to 'dstIp'
-func ArpingOverIfaceByName(dstIp net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
-	if iface, err := net.InterfaceByName(ifaceName); err != nil {
+// ArpingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
+func ArpingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
+	iface, err := net.InterfaceByName(ifaceName)
+	if err != nil {
 		return nil, 0, err
-	} else {
-		return ArpingOverIface(dstIp, *iface)
 	}
+	return ArpingOverIface(dstIP, *iface)
 }
 
-// sends an arp ping over interface 'iface' to 'dstIp'
-func ArpingOverIface(dstIp net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
+// ArpingOverIface sends an arp ping over interface 'iface' to 'dstIP'
+func ArpingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
 	srcMac := iface.HardwareAddr
-	srcIp, err := findIpInNetworkFromIface(dstIp, iface)
+	srcIP, err := findIPInNetworkFromIface(dstIP, iface)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	broadcastMac := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
-	request := newArpRequest(srcMac, srcIp, broadcastMac, dstIp)
+	request := newArpRequest(srcMac, srcIP, broadcastMac, dstIP)
 
 	if err := initialize(iface); err != nil {
 		return nil, 0, err
@@ -117,7 +118,7 @@ func ArpingOverIface(dstIp net.IP, iface net.Interface) (net.HardwareAddr, time.
 
 	go func() {
 		// send arp request
-		verboseLog.Printf("arping '%s' over interface: '%s' with address: '%s'\n", dstIp, iface.Name, srcIp)
+		verboseLog.Printf("arping '%s' over interface: '%s' with address: '%s'\n", dstIP, iface.Name, srcIP)
 		if sendTime, err := send(request); err != nil {
 			pingResultChan <- PingResult{nil, 0, err}
 		} else {
@@ -132,14 +133,14 @@ func ArpingOverIface(dstIp net.IP, iface net.Interface) (net.HardwareAddr, time.
 
 				if response.IsResponseOf(request) {
 					duration := receiveTime.Sub(sendTime)
-					verboseLog.Printf("process received arp: srcIp: '%s', srcMac: '%s'\n",
-						response.SenderIp(), response.SenderMac())
+					verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
+						response.SenderIP(), response.SenderMac())
 					pingResultChan <- PingResult{response.SenderMac(), duration, err}
 					return
-				} else {
-					verboseLog.Printf("ignore received arp: srcIp: '%s', srcMac: '%s'\n",
-						response.SenderIp(), response.SenderMac())
 				}
+
+				verboseLog.Printf("ignore received arp: srcIP: '%s', srcMac: '%s'\n",
+					response.SenderIP(), response.SenderMac())
 			}
 		}
 	}()
@@ -148,16 +149,16 @@ func ArpingOverIface(dstIp net.IP, iface net.Interface) (net.HardwareAddr, time.
 	case pingResult := <-pingResultChan:
 		return pingResult.mac, pingResult.duration, pingResult.err
 	case <-time.After(timeout):
-		return nil, 0, Timeout
+		return nil, 0, ErrTimeout
 	}
 }
 
-// enable verbose output on stdout
+// EnableVerboseLog enables verbose logging on stdout
 func EnableVerboseLog() {
 	verboseLog = log.New(os.Stdout, "", 0)
 }
 
-// set ping timeout
+// SetTimeout sets ping timeout
 func SetTimeout(t time.Duration) {
 	timeout = t
 }

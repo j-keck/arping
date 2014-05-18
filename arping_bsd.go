@@ -73,12 +73,13 @@ func send(request arpDatagram) (time.Time, error) {
 
 func receive() (arpDatagram, time.Time, error) {
 	buffer := make([]byte, buflen)
-	if n, err := syscall.Read(bpfFd, buffer); err != nil {
+	n, err := syscall.Read(bpfFd, buffer)
+	if err != nil {
 		return arpDatagram{}, time.Now(), err
-	} else {
-		// skip 26 bytes bpf header + 14 bytes ethernet header
-		return parseArpDatagram(buffer[40:n]), time.Now(), nil
 	}
+
+	// skip 26 bytes bpf header + 14 bytes ethernet header
+	return parseArpDatagram(buffer[40:n]), time.Now(), nil
 }
 
 func deinitialize() error {
