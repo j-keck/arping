@@ -57,9 +57,9 @@ func main() {
 	var durationNanos time.Duration
 	var err error
 	if len(*ifaceNameFlag) > 0 {
-		hwAddr, durationNanos, err = arping.ArpingOverIfaceByName(dstIP, *ifaceNameFlag)
+		hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, *ifaceNameFlag)
 	} else {
-		hwAddr, durationNanos, err = arping.Arping(dstIP)
+		hwAddr, durationNanos, err = arping.Ping(dstIP)
 	}
 
 	// ping timeout

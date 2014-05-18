@@ -16,7 +16,7 @@
 //
 //     func main(){
 //       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, duration, err := arping.Arping(dstIP); err != nil {
+//       if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
 //         fmt.Println(err)
 //       } else {
 //         fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
@@ -31,7 +31,7 @@
 //
 //     func main(){
 //       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, _, err := arping.Arping(dstIP); err != nil {
+//       if hwAddr, _, err := arping.Ping(dstIP); err != nil {
 //         fmt.Println(err)
 //       } else {
 //         fmt.Printf("%s is at %s\n", dstIP, hwAddr)
@@ -46,7 +46,7 @@
 //
 //     func main(){
 //       dstIP := net.ParseIP("192.168.1.1")
-//       _, _, err := arping.Arping(dstIP)
+//       _, _, err := arping.Ping(dstIP)
 //       if err == arping.ErrTimeout {
 //         fmt.Println("offline")
 //       }else if err != nil {
@@ -75,26 +75,26 @@ var (
 	timeout    = time.Duration(500 * time.Millisecond)
 )
 
-// Arping sends an arp ping to 'dstIP'
-func Arping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
+// Ping sends an arp ping to 'dstIP'
+func Ping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
 	iface, err := findUsableInterfaceForNetwork(dstIP)
 	if err != nil {
 		return nil, 0, err
 	}
-	return ArpingOverIface(dstIP, *iface)
+	return PingOverIface(dstIP, *iface)
 }
 
-// ArpingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
-func ArpingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
+// PingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
+func PingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
 	iface, err := net.InterfaceByName(ifaceName)
 	if err != nil {
 		return nil, 0, err
 	}
-	return ArpingOverIface(dstIP, *iface)
+	return PingOverIface(dstIP, *iface)
 }
 
-// ArpingOverIface sends an arp ping over interface 'iface' to 'dstIP'
-func ArpingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
+// PingOverIface sends an arp ping over interface 'iface' to 'dstIP'
+func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
 	srcMac := iface.HardwareAddr
 	srcIP, err := findIPInNetworkFromIface(dstIP, iface)
 	if err != nil {

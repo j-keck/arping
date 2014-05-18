@@ -26,7 +26,7 @@ The library requires raw socket access. So it must run as root, or with appropri
 
      func main(){
        dstIP := net.ParseIP("192.168.1.1")
-       if hwAddr, duration, err := arping.Arping(dstIP); err != nil {
+       if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
          fmt.Println(err)
        } else {
          fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
@@ -39,7 +39,7 @@ The library requires raw socket access. So it must run as root, or with appropri
 
      func main(){  
        dstIP := net.ParseIP("192.168.1.1")
-       if hwAddr, _, err := arping.Arping(dstIP); err != nil {
+       if hwAddr, _, err := arping.Ping(dstIP); err != nil {
          fmt.Println(err)
        } else {
          fmt.Printf("%s is at %s\n", dstIP, hwAddr)
@@ -52,7 +52,7 @@ The library requires raw socket access. So it must run as root, or with appropri
 
      func main(){
        dstIP := net.ParseIP("192.168.1.1")
-       _, _, err := arping.Arping(dstIP)
+       _, _, err := arping.Ping(dstIP)
        if err == arping.ErrTimeout {
          fmt.Println("offline")
        }else if err != nil {
