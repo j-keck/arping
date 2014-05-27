@@ -63,7 +63,7 @@ func main() {
 	}
 
 	// ping timeout
-	if err == arping.Timeout {
+	if err == arping.ErrTimeout {
 		fmt.Println(err)
 		os.Exit(1)
 	}
