@@ -16,11 +16,11 @@ func initialize(iface net.Interface) error {
 }
 
 func send(request arpDatagram) (time.Time, error) {
-	return new(time.Time), errWindowsNotSupported
+	return time.Now(), errWindowsNotSupported
 }
 
 func receive() (arpDatagram, time.Time, error) {
-	return new(arpDatagram), new(time.Time), errWindowsNotSupported
+	return arpDatagram{}, time.Now(), errWindowsNotSupported
 }
 
 func deinitialize() error {
