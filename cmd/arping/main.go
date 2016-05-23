@@ -9,6 +9,7 @@
 // options:
 //   -h: print help and exit
 //   -v: verbose output
+//   -U: unsolicited/gratuitous ARP mode
 //   -i: interface name to use
 //   -t: timeout - duration with unit - such as 100ms, 500ms, 1s ...
 //
@@ -30,10 +31,11 @@ import (
 )
 
 var (
-	helpFlag      = flag.Bool("h", false, "print help and exit")
-	verboseFlag   = flag.Bool("v", false, "verbose output")
-	ifaceNameFlag = flag.String("i", "", "interface name to use - autodetected if omitted")
-	timeoutFlag   = flag.Duration("t", 500*time.Millisecond, "timeout - such as 100ms, 500ms, 1s ...")
+	helpFlag       = flag.Bool("h", false, "print help and exit")
+	verboseFlag    = flag.Bool("v", false, "verbose output")
+	gratuitousFlag = flag.Bool("U", false, "unsolicited/gratuitous ARP mode")
+	ifaceNameFlag  = flag.String("i", "", "interface name to use - autodetected if omitted")
+	timeoutFlag    = flag.Duration("t", 500*time.Millisecond, "timeout - such as 100ms, 500ms, 1s ...")
 )
 
 func main() {
@@ -56,10 +58,18 @@ func main() {
 	var hwAddr net.HardwareAddr
 	var durationNanos time.Duration
 	var err error
-	if len(*ifaceNameFlag) > 0 {
-		hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, *ifaceNameFlag)
+	if *gratuitousFlag {
+		if len(*ifaceNameFlag) > 0 {
+			err = arping.GratuitousArpOverIfaceByName(dstIP, *ifaceNameFlag)
+		} else {
+			err = arping.GratuitousArp(dstIP)
+		}
 	} else {
-		hwAddr, durationNanos, err = arping.Ping(dstIP)
+		if len(*ifaceNameFlag) > 0 {
+			hwAddr, durationNanos, err = arping.PingOverIfaceByName(dstIP, *ifaceNameFlag)
+		} else {
+			hwAddr, durationNanos, err = arping.Ping(dstIP)
+		}
 	}
 
 	// ping timeout
@@ -72,6 +82,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
+	}
+
+	if *gratuitousFlag {
+		os.Exit(0)
 	}
 
 	// ping success
