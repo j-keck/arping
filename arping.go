@@ -127,7 +127,7 @@ func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Du
 		duration time.Duration
 		err      error
 	}
-	pingResultChan := make(chan PingResult)
+	pingResultChan := make(chan PingResult, 1)
 
 	go func() {
 		// send arp request
@@ -162,6 +162,7 @@ func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Du
 	case pingResult := <-pingResultChan:
 		return pingResult.mac, pingResult.duration, pingResult.err
 	case <-time.After(timeout):
+		deinitialize()
 		return nil, 0, ErrTimeout
 	}
 }
