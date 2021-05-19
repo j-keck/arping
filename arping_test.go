@@ -1,13 +1,12 @@
 package arping
 
 import (
-	"testing"
 	"net"
-	"strings"
-	"time"
 	"runtime"
+	"strings"
+	"testing"
+	"time"
 )
-
 
 func TestPingWithInvalidIP(t *testing.T) {
 	ip := net.ParseIP("invalid")
@@ -66,7 +65,7 @@ func TestGoroutinesDoesNotLeak(t *testing.T) {
 	}
 
 	ok := make(chan bool, 1)
-	go func(){
+	go func() {
 		for {
 			if runtime.NumGoroutine() < spawnNumGoroutines {
 				ok <- true
@@ -86,7 +85,7 @@ func TestGoroutinesDoesNotLeak(t *testing.T) {
 }
 
 func validateInvalidV4AddrErr(t *testing.T, err error) {
-	if ! strings.Contains(err.Error(), "not a valid v4 Address") {
+	if !strings.Contains(err.Error(), "not a valid v4 Address") {
 		t.Errorf("unexpected error: %s", err)
 	}
 }
