@@ -129,41 +129,49 @@ func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Du
 		err      error
 	}
 	pingResultChan := make(chan PingResult, 1)
+	cancelChan := make(chan struct{}, 1)
 
-	go func() {
+	go func(ch chan<- PingResult, cancel <-chan struct{}) {
 		// send arp request
 		verboseLog.Printf("arping '%s' over interface: '%s' with address: '%s'\n", dstIP, iface.Name, srcIP)
 		if sendTime, err := sock.send(request); err != nil {
 			pingResultChan <- PingResult{nil, 0, err}
 		} else {
 			for {
-				// receive arp response
-				response, receiveTime, err := sock.receive()
-
-				if err != nil {
-					pingResultChan <- PingResult{nil, 0, err}
+				select {
+				case <-cancel:
+					//verboseLog.Printf("Cancel goroutine because of timeout.")
 					return
-				}
+				default:
 
-				if response.IsResponseOf(request) {
-					duration := receiveTime.Sub(sendTime)
-					verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
+					// receive arp response
+					response, receiveTime, err := sock.receive()
+
+					if err != nil {
+						pingResultChan <- PingResult{nil, 0, err}
+						return
+					}
+
+					if response.IsResponseOf(request) {
+						duration := receiveTime.Sub(sendTime)
+						verboseLog.Printf("process received arp: srcIP: '%s', srcMac: '%s'\n",
+							response.SenderIP(), response.SenderMac())
+						pingResultChan <- PingResult{response.SenderMac(), duration, err}
+						return
+					}
+
+					verboseLog.Printf("ignore received arp: srcIP: '%s', srcMac: '%s'\n",
 						response.SenderIP(), response.SenderMac())
-					pingResultChan <- PingResult{response.SenderMac(), duration, err}
-					return
 				}
-
-				verboseLog.Printf("ignore received arp: srcIP: '%s', srcMac: '%s'\n",
-					response.SenderIP(), response.SenderMac())
 			}
 		}
-	}()
+	}(pingResultChan, cancelChan)
 
 	select {
 	case pingResult := <-pingResultChan:
 		return pingResult.mac, pingResult.duration, pingResult.err
 	case <-time.After(timeout):
-		sock.deinitialize()
+		cancelChan <- struct{}{}
 		return nil, 0, ErrTimeout
 	}
 }
