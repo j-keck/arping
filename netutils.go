@@ -1,7 +1,6 @@
 package arping
 
 import (
-	"errors"
 	"fmt"
 	"net"
 )
@@ -60,5 +59,5 @@ func findUsableInterfaceForNetwork(dstIP net.IP) (*net.Interface, error) {
 		logIfaceResult("USABLE", iface)
 		return &iface, nil
 	}
-	return nil, errors.New("no usable interface found")
+	return nil, ErrNoUsableInterface
 }
