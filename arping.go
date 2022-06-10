@@ -72,6 +72,9 @@ var (
 	// ErrTimeout error
 	ErrTimeout = errors.New("timeout")
 
+	// ErrNoUsableInterface no usable interface found
+	ErrNoUsableInterface = errors.New("no usable interface found")
+
 	verboseLog = log.New(ioutil.Discard, "", 0)
 	timeout    = time.Duration(500 * time.Millisecond)
 )
@@ -91,27 +94,40 @@ func Ping(dstIP net.IP) (net.HardwareAddr, time.Duration, error) {
 
 // PingOverIfaceByName sends an arp ping over interface name 'ifaceName' to 'dstIP'
 func PingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time.Duration, error) {
-	if err := validateIP(dstIP); err != nil {
-		return nil, 0, err
-	}
-
-	iface, err := net.InterfaceByName(ifaceName)
-	if err != nil {
-		return nil, 0, err
-	}
-	return PingOverIface(dstIP, *iface)
+	return PingWithOptions(dstIP, WithIfaceByName(ifaceName))
 }
 
 // PingOverIface sends an arp ping over interface 'iface' to 'dstIP'
 func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
+	return PingWithOptions(dstIP, WithIface(iface))
+}
+
+// PingWithOptions sends an arp ping to 'dstIP'
+func PingWithOptions(dstIP net.IP, opts ...Option) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
 
+	var ops = newOptions()
+	for _, opt := range opts {
+		if err := opt.apply(ops); err != nil {
+			return nil, 0, err
+		}
+	}
+
+	if ops.iface == nil {
+		return nil, 0, ErrNoUsableInterface
+	}
+	iface := *ops.iface
+	srcIP := ops.sourceIP
 	srcMac := iface.HardwareAddr
-	srcIP, err := findIPInNetworkFromIface(dstIP, iface)
-	if err != nil {
-		return nil, 0, err
+
+	if len(srcIP) == 0 {
+		ip, err := findIPInNetworkFromIface(dstIP, iface)
+		if err != nil {
+			return nil, 0, err
+		}
+		srcIP = ip
 	}
 
 	broadcastMac := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
@@ -162,7 +178,7 @@ func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Du
 	select {
 	case pingResult := <-pingResultChan:
 		return pingResult.mac, pingResult.duration, pingResult.err
-	case <-time.After(timeout):
+	case <-time.After(ops.timeout):
 		sock.deinitialize()
 		return nil, 0, ErrTimeout
 	}
@@ -170,35 +186,41 @@ func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Du
 
 // GratuitousArp sends an gratuitous arp from 'srcIP'
 func GratuitousArp(srcIP net.IP) error {
-	if err := validateIP(srcIP); err != nil {
-		return err
-	}
-
-	iface, err := findUsableInterfaceForNetwork(srcIP)
-	if err != nil {
-		return err
-	}
-	return GratuitousArpOverIface(srcIP, *iface)
+	return GratuitousArpWithOptions(WithSourceIP(srcIP))
 }
 
 // GratuitousArpOverIfaceByName sends an gratuitous arp over interface name 'ifaceName' from 'srcIP'
 func GratuitousArpOverIfaceByName(srcIP net.IP, ifaceName string) error {
-	if err := validateIP(srcIP); err != nil {
-		return err
-	}
-
-	iface, err := net.InterfaceByName(ifaceName)
-	if err != nil {
-		return err
-	}
-	return GratuitousArpOverIface(srcIP, *iface)
+	return GratuitousArpWithOptions(WithSourceIP(srcIP), WithIfaceByName(ifaceName))
 }
 
 // GratuitousArpOverIface sends an gratuitous arp over interface 'iface' from 'srcIP'
 func GratuitousArpOverIface(srcIP net.IP, iface net.Interface) error {
+	return GratuitousArpWithOptions(WithSourceIP(srcIP), WithIface(iface))
+}
+
+// GratuitousArpWithOptions sends an gratuitous arp
+func GratuitousArpWithOptions(opts ...Option) error {
+	var ops = newOptions()
+	for _, opt := range opts {
+		if err := opt.apply(ops); err != nil {
+			return err
+		}
+	}
+
+	srcIP := ops.sourceIP
 	if err := validateIP(srcIP); err != nil {
 		return err
 	}
+
+	if ops.iface == nil {
+		iface, err := findUsableInterfaceForNetwork(srcIP)
+		if err != nil {
+			return err
+		}
+		ops.iface = iface
+	}
+	iface := *ops.iface
 
 	srcMac := iface.HardwareAddr
 	broadcastMac := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
