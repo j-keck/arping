@@ -6,19 +6,32 @@ import (
 	"net"
 )
 
-func findIPInNetworkFromIface(dstIP net.IP, iface net.Interface) (net.IP, error) {
+// findIPInNetworkFromIface find an ip from iface as src
+func findIPInNetworkFromIface(dstIP net.IP, iface net.Interface, ignoreNet bool) (net.IP, error) {
 	addrs, err := iface.Addrs()
 
 	if err != nil {
 		return nil, err
 	}
 
-	for _, a := range addrs {
+	if len(addrs) == 0 {
+		return nil, fmt.Errorf("iface: '%s' do not contains any ip", iface.Name)
+	}
+
+	var firstIP net.IP
+	for i, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok {
 			if ipnet.Contains(dstIP) {
 				return ipnet.IP, nil
 			}
+			if i == 0 {
+				firstIP = ipnet.IP
+			}
 		}
+	}
+
+	if ignoreNet {
+		return firstIP, nil
 	}
 	return nil, fmt.Errorf("iface: '%s' can't reach ip: '%s'", iface.Name, dstIP)
 }
@@ -35,7 +48,7 @@ func findUsableInterfaceForNetwork(dstIP net.IP) (*net.Interface, error) {
 	}
 
 	hasAddressInNetwork := func(iface net.Interface) bool {
-		if _, err := findIPInNetworkFromIface(dstIP, iface); err != nil {
+		if _, err := findIPInNetworkFromIface(dstIP, iface, false); err != nil {
 			return false
 		}
 		return true

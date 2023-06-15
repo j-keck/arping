@@ -102,14 +102,14 @@ func PingOverIfaceByName(dstIP net.IP, ifaceName string) (net.HardwareAddr, time
 	return PingOverIface(dstIP, *iface)
 }
 
-// PingOverIface sends an arp ping over interface 'iface' to 'dstIP'
+// PingOverIface forcedly sends an arp ping over interface 'iface' to 'dstIP'
 func PingOverIface(dstIP net.IP, iface net.Interface) (net.HardwareAddr, time.Duration, error) {
 	if err := validateIP(dstIP); err != nil {
 		return nil, 0, err
 	}
 
 	srcMac := iface.HardwareAddr
-	srcIP, err := findIPInNetworkFromIface(dstIP, iface)
+	srcIP, err := findIPInNetworkFromIface(dstIP, iface, true)
 	if err != nil {
 		return nil, 0, err
 	}
