@@ -1,33 +1,34 @@
-//
 // command line arping utility which use the 'arping' library
 //
 // this utility need raw socket access, please run it
-//   under FreeBSD: as root
-//   under Linux: as root or with 'cap_net_raw' permission: sudo setcap cap_net_raw+ep <ARPING_PATH>
 //
+//	under FreeBSD: as root
+//	under Linux: as root or with 'cap_net_raw' permission: sudo setcap cap_net_raw+ep <ARPING_PATH>
 //
 // options:
-//   -h: print help and exit
-//   -v: verbose output
-//   -U: unsolicited/gratuitous ARP mode
-//   -i: interface name to use
-//   -t: timeout - duration with unit - such as 100ms, 500ms, 1s ...
 //
+//	-h: print help and exit
+//	-v: verbose output
+//	-U: unsolicited/gratuitous ARP mode
+//	-i: interface name to use
+//	-t: timeout - duration with unit - such as 100ms, 500ms, 1s ...
 //
 // exit code:
-//    0: target online
-//    1: target offline
-//    2: error occurred - see command output
 //
+//	0: target online
+//	1: target offline
+//	2: error occurred - see command output
 package main
 
 import (
 	"flag"
 	"fmt"
-	"github.com/j-keck/arping"
+	"log"
 	"net"
 	"os"
 	"time"
+
+	"github.com/j-keck/arping"
 )
 
 var (
@@ -45,7 +46,7 @@ func main() {
 		printHelpAndExit()
 	}
 	if *verboseFlag {
-		arping.EnableVerboseLog()
+		arping.EnableVerboseLog(log.New(os.Stdout, "", 0))
 	}
 	arping.SetTimeout(*timeoutFlag)
 

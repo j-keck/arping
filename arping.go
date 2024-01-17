@@ -2,60 +2,57 @@
 //
 // The currently supported platforms are: Linux and BSD.
 //
-//
 // The library requires raw socket access. So it must run as root, or with appropriate capabilities under linux:
 // `sudo setcap cap_net_raw+ep <BIN>`.
 //
-//
 // Examples:
 //
-//   ping a host:
-//   ------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
+//	ping a host:
+//	------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
 //
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
-//         fmt.Println(err)
-//       } else {
-//         fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
-//       }
-//     }
-//
-//
-//   resolve mac address:
-//   --------------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
-//
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       if hwAddr, _, err := arping.Ping(dstIP); err != nil {
-//         fmt.Println(err)
-//       } else {
-//         fmt.Printf("%s is at %s\n", dstIP, hwAddr)
-//       }
-//     }
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    if hwAddr, duration, err := arping.Ping(dstIP); err != nil {
+//	      fmt.Println(err)
+//	    } else {
+//	      fmt.Printf("%s (%s) %d usec\n", dstIP, hwAddr, duration/1000)
+//	    }
+//	  }
 //
 //
-//   check if host is online:
-//   ------------------------
-//     package main
-//     import ("fmt"; "github.com/j-keck/arping"; "net")
+//	resolve mac address:
+//	--------------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
 //
-//     func main(){
-//       dstIP := net.ParseIP("192.168.1.1")
-//       _, _, err := arping.Ping(dstIP)
-//       if err == arping.ErrTimeout {
-//         fmt.Println("offline")
-//       }else if err != nil {
-//         fmt.Println(err.Error())
-//       }else{
-//         fmt.Println("online")
-//       }
-//     }
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    if hwAddr, _, err := arping.Ping(dstIP); err != nil {
+//	      fmt.Println(err)
+//	    } else {
+//	      fmt.Printf("%s is at %s\n", dstIP, hwAddr)
+//	    }
+//	  }
 //
+//
+//	check if host is online:
+//	------------------------
+//	  package main
+//	  import ("fmt"; "github.com/j-keck/arping"; "net")
+//
+//	  func main(){
+//	    dstIP := net.ParseIP("192.168.1.1")
+//	    _, _, err := arping.Ping(dstIP)
+//	    if err == arping.ErrTimeout {
+//	      fmt.Println("offline")
+//	    }else if err != nil {
+//	      fmt.Println(err.Error())
+//	    }else{
+//	      fmt.Println("online")
+//	    }
+//	  }
 package arping
 
 import (
@@ -64,16 +61,20 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"time"
 )
+
+type Logger interface {
+	Printf(format string, v ...interface{})
+	Println(v ...interface{})
+}
 
 var (
 	// ErrTimeout error
 	ErrTimeout = errors.New("timeout")
 
-	verboseLog = log.New(ioutil.Discard, "", 0)
-	timeout    = time.Duration(500 * time.Millisecond)
+	verboseLog Logger = log.New(ioutil.Discard, "", 0)
+	timeout           = time.Duration(500 * time.Millisecond)
 )
 
 // Ping sends an arp ping to 'dstIP'
@@ -215,8 +216,8 @@ func GratuitousArpOverIface(srcIP net.IP, iface net.Interface) error {
 }
 
 // EnableVerboseLog enables verbose logging on stdout
-func EnableVerboseLog() {
-	verboseLog = log.New(os.Stdout, "", 0)
+func EnableVerboseLog(l Logger) {
+	verboseLog = l
 }
 
 // SetTimeout sets ping timeout
