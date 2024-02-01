@@ -23,12 +23,15 @@ func initialize(iface net.Interface) (s *LinuxSocket, err error) {
 }
 
 func (s *LinuxSocket) send(request arpDatagram) (time.Time, error) {
+	socketTimeout := timeout.Nanoseconds()
+	t := syscall.NsecToTimeval(socketTimeout)
+	syscall.SetsockoptTimeval(s.sock, syscall.SOL_SOCKET, syscall.SO_SNDTIMEO, &t)
 	return time.Now(), syscall.Sendto(s.sock, request.MarshalWithEthernetHeader(), 0, &s.toSockaddr)
 }
 
 func (s *LinuxSocket) receive() (arpDatagram, time.Time, error) {
 	buffer := make([]byte, 128)
-	socketTimeout := timeout.Nanoseconds() * 2
+	socketTimeout := timeout.Nanoseconds()
 	t := syscall.NsecToTimeval(socketTimeout)
 	syscall.SetsockoptTimeval(s.sock, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &t)
 	n, _, err := syscall.Recvfrom(s.sock, buffer, 0)
